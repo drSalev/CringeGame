@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEditor.Search;
 using UnityEngine;
 
@@ -7,25 +8,31 @@ public class PlayerBehaviour : MonoBehaviour
 {
     
     public LayerMask groundLayer;
-    public float speed = 20f;
-    public float rotationSpeed = 200f;
-    public float jumpForce = 20f;
-    public float distanceToGround = 0.1f;
+    public float moveSpeed;
+    public float sideSpeed;
+    public float jumpForce;
+    public float distanceToGround;
     
-    private float hRotation = 0f;
-    private bool forward = false; 
-    private bool backward = false;
-    private bool left = false;
-    private bool right = false;
-    private bool up = false;
+    private bool forward; 
+    private bool backward;
+    private bool left;
+    private bool right;
+    private bool up;
     private Rigidbody rb;
     private CapsuleCollider col;
+    private GameObject cam;
 
     // Start is called before the first frame update
     void Start()
     {
+        forward = false;
+        backward = false;
+        left = false;
+        right = false;
+        up = false;
         rb = GetComponent<Rigidbody>();
         col = GetComponent<CapsuleCollider>();
+        cam = GameObject.Find("Camera");
     }
 
     // Update is called once per frame
@@ -42,7 +49,6 @@ public class PlayerBehaviour : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
             up = true;
 
-        hRotation = Input.GetAxis("Mouse X") * rotationSpeed;
         if (Input.GetKeyUp(KeyCode.Escape))
         {
             Cursor.lockState = CursorLockMode.None;
@@ -53,24 +59,25 @@ public class PlayerBehaviour : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (forward)
+        if (IsGrounded() && forward)
         {
-            rb.AddForce(transform.forward * speed, ForceMode.Force);
+            rb.AddForce(cam.transform.forward * moveSpeed, ForceMode.Force);
             forward = false;
         }
-        if (backward)
+        if (IsGrounded() && backward)
         {
-            rb.AddForce(-transform.forward * speed / 2, ForceMode.Force);
+            rb.AddForce(-cam.transform.forward * sideSpeed, ForceMode.Force);
             backward = false;
         }
-        if (left)
+        if (IsGrounded() && left)
         {
-            rb.AddForce(-transform.right * speed / 2, ForceMode.Force);
+            rb.AddForce(-cam.transform.right * sideSpeed, ForceMode.Force);
             left = false;
         }
-        if (right)
+
+        if (IsGrounded() && right)
         {
-            rb.AddForce(transform.right * speed / 2, ForceMode.Force);
+            rb.AddForce(cam.transform.right * sideSpeed, ForceMode.Force);
             right = false;
         }
         if (IsGrounded() && up)
@@ -78,10 +85,6 @@ public class PlayerBehaviour : MonoBehaviour
             rb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
             up = false;
         }
-
-        Vector3 rotation = hRotation * Vector3.up;
-        Quaternion angleRot = Quaternion.Euler(rotation * Time.fixedDeltaTime);
-        rb.MoveRotation(rb.rotation * angleRot);
     }
 
     private bool IsGrounded()
